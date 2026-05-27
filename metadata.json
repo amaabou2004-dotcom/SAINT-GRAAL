@@ -1,0 +1,8 @@
+{
+  "name": "Saint Graal Ivoirien",
+  "description": "Site officiel de la maison d'édition Saint Graal Ivoirien. Catalogue, auteurs, actualités, concours et soumissions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

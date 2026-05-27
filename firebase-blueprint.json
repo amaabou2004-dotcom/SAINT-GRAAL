@@ -1,0 +1,266 @@
+{
+  "entities": {
+    "Config": {
+      "title": "Site Configuration",
+      "description": "Global settings for the website",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "slogan": { "type": "string" },
+        "intro": { "type": "string" },
+        "email": { "type": "string" },
+        "whatsapp": { "type": "string" },
+        "logo": { "type": "string" },
+        "dirPhoto": { "type": "string" },
+        "lastAuthorRotation": { "type": "string" }
+      },
+      "required": ["name", "slogan", "email", "whatsapp"]
+    },
+    "Author": {
+      "title": "Public Author",
+      "description": "Public author profile displayed on the site",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "photo": { "type": "string" },
+        "bio": { "type": "string" },
+        "isHidden": { "type": "boolean" }
+      },
+      "required": ["id", "name", "photo", "bio"]
+    },
+    "Book": {
+      "title": "Book",
+      "description": "Book item in the catalogue",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "authorId": { "type": "string" },
+        "isbn": { "type": "string" },
+        "publicationDate": { "type": "string" },
+        "price": { "type": "string" },
+        "summary": { "type": "string" },
+        "cover": { "type": "string" },
+        "genre": { "type": "string" }
+      },
+      "required": ["id", "title", "authorId", "isbn", "publicationDate", "price", "summary", "cover", "genre"]
+    },
+    "News": {
+      "title": "News",
+      "description": "News article or update",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "date": { "type": "string" },
+        "content": { "type": "string" },
+        "image": { "type": "string" }
+      },
+      "required": ["id", "title", "date", "content"]
+    },
+    "Gallery": {
+      "title": "Gallery Item",
+      "description": "Photo in the site gallery",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "url": { "type": "string" },
+        "caption": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["id", "url", "caption", "date"]
+    },
+    "RegisteredAuthor": {
+      "title": "Registered Author",
+      "description": "Private author account for the Author Space",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "passwordHash": { "type": "string" },
+        "photo": { "type": "string" },
+        "bio": { "type": "string" },
+        "phone": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "blocked"] },
+        "isOnline": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "passwordHash", "status"]
+    },
+    "Message": {
+      "title": "Chat Message",
+      "description": "Private message between authors",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "senderId": { "type": "string" },
+        "receiverId": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "isRead": { "type": "boolean" }
+      },
+      "required": ["id", "senderId", "receiverId", "text", "timestamp", "isRead"]
+    },
+    "Newsletter": {
+      "title": "Newsletter Subscription",
+      "description": "User email for newsletter subscription",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "Submission": {
+      "title": "Manuscript Submission",
+      "description": "Manuscripts submitted by authors",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "message": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "fileName": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "refused"] },
+        "internalComment": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "phone", "message", "fileUrl", "status", "createdAt"]
+    },
+    "ContactMessage": {
+      "title": "Contact Message",
+      "description": "Messages from the contact form",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "subject": { "type": "string" },
+        "message": { "type": "string" },
+        "isRead": { "type": "boolean" },
+        "replied": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "message", "isRead", "replied", "createdAt"]
+    },
+    "AdminLog": {
+      "title": "Admin Log",
+      "description": "Action history logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "action": { "type": "string" },
+        "entity": { "type": "string" },
+        "entityId": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "userId", "userName", "action", "timestamp"]
+    },
+    "Store": {
+      "title": "Bookstore",
+      "description": "Physical bookstore location",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "hours": { "type": "string" },
+        "phone": { "type": "string" },
+        "order": { "type": "number" }
+      },
+      "required": ["id", "name", "address", "hours", "phone"]
+    },
+    "Testimonial": {
+      "title": "Reader Testimonial",
+      "description": "Feedbacks and reviews from readers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "content": { "type": "string" },
+        "photo": { "type": "string" },
+        "rating": { "type": "number" },
+        "date": { "type": "string" }
+      },
+      "required": ["id", "name", "content", "rating", "date"]
+    },
+    "FAQ": {
+      "title": "FAQ Item",
+      "description": "Frequently Asked Question item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "question": { "type": "string" },
+        "answer": { "type": "string" },
+        "order": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "question", "answer", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/config/main": {
+      "schema": "Config",
+      "description": "Global website configuration"
+    },
+    "/stores/{storeId}": {
+      "schema": "Store",
+      "description": "Physical point of sales"
+    },
+    "/authors/{authorId}": {
+      "schema": "Author",
+      "description": "Public authors"
+    },
+    "/books/{bookId}": {
+      "schema": "Book",
+      "description": "Catalogue books"
+    },
+    "/news/{newsId}": {
+      "schema": "News",
+      "description": "Site news"
+    },
+    "/registeredAuthors/{userId}": {
+      "schema": "RegisteredAuthor",
+      "description": "Author accounts"
+    },
+    "/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Chat messages"
+    },
+    "/gallery/{galleryId}": {
+      "schema": "Gallery",
+      "description": "Gallery photos"
+    },
+    "/newsletter/{subscriptionId}": {
+      "schema": "Newsletter",
+      "description": "Newsletter subscribers"
+    },
+    "/submissions/{submissionId}": {
+      "schema": "Submission",
+      "description": "Manuscript submissions"
+    },
+    "/contactMessages/{messageId}": {
+      "schema": "ContactMessage",
+      "description": "Site contact messages"
+    },
+    "/adminLogs/{logId}": {
+      "schema": "AdminLog",
+      "description": "System activity logs"
+    },
+    "/testimonials/{testimonialId}": {
+      "schema": "Testimonial",
+      "description": "User reviews and testimonials"
+    },
+    "/faqs/{faqId}": {
+      "schema": "FAQ",
+      "description": "Frequently Asked Questions"
+    }
+  }
+}

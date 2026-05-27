@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mains-ouvertes-editions.com/sitemap.xml

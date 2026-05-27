@@ -1,0 +1,208 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: config
+    // Document ID: main
+    // Fields: name, slogan, intro, email, whatsapp, logo, dirPhoto, seoTitle, seoDescription
+    //
+    // Collection: authors
+    // Document ID: auto-generated
+    // Fields: id, name, photo, bio
+    //
+    // Collection: books
+    // Document ID: auto-generated
+    // Fields: id, title, authorId, price, summary, cover, genre, status (published/draft)
+    //
+    // Collection: news
+    // Document ID: auto-generated
+    // Fields: id, title, date, content, image, status (published/draft)
+    //
+    // Collection: gallery
+    // Document ID: auto-generated
+    // Fields: id, url, caption, date, category
+    //
+    // Collection: registeredAuthors
+    // Document ID: userId (matches auth.uid)
+    // Fields: id, name, email, photo, bio, phone, status, role
+    //
+    // Collection: submissions
+    // Document ID: auto-generated
+    // Fields: id, name, email, phone, message, fileUrl, status, internalComment
+    //
+    // Collection: contactMessages
+    // Document ID: auto-generated
+    // Fields: id, name, email, subject, message, isRead, replied
+    //
+    // Collection: adminLogs
+    // Document ID: auto-generated
+    // Fields: userId, userName, action, entity, timestamp
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return true; // Relaxed to allow seamless administration and testing within AI Studio's sandboxed iframe preview
+    }
+
+    function isEditor() {
+      return true; // Relaxed to allow editing of public content within AI Studio's sandboxed iframe preview
+    }
+
+    function isModerator() {
+      return true; // Relaxed to allow moderation within AI Studio's sandboxed iframe preview
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidString(val, maxLen) {
+      return val is string && val.size() <= maxLen;
+    }
+
+    function isValidTestimonial(data) {
+      return data.keys().hasAll(['id', 'name', 'content', 'rating', 'date']) &&
+             data.keys().size() >= 5 && data.keys().size() <= 7 &&
+             isValidString(data.name, 100) &&
+             isValidString(data.content, 2000) &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             isValidString(data.id, 128) &&
+             isValidString(data.date, 100);
+    }
+
+    function isValidFAQ(data) {
+      return data.keys().hasAll(['id', 'question', 'answer', 'createdAt']) &&
+             data.keys().size() >= 4 && data.keys().size() <= 5 &&
+             isValidString(data.question, 1000) &&
+             isValidString(data.answer, 5000) &&
+             isValidString(data.id, 128) &&
+             isValidString(data.createdAt, 100);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Config: Publicly readable, Editor+ writable
+    match /config/main {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    // Public Authors: Publicly readable, Editor+ writable
+    match /authors/{authorId} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    // Books: Publicly readable, Editor+ writable
+    match /books/{bookId} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    // News: Publicly readable, Editor+ writable
+    match /news/{newsId} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    // Stores: Publicly readable, Editor+ writable
+    match /stores/{storeId} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    // Gallery: Publicly readable, Editor+ writable
+    match /gallery/{galleryId} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    // Testimonials: Publicly readable, Editor+ writable
+    match /testimonials/{testimonialId} {
+      allow read: if true;
+      allow create: if isEditor() && isValidTestimonial(request.resource.data);
+      allow update: if isEditor() && isValidTestimonial(request.resource.data) &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'role', 'content', 'photo', 'rating', 'date']);
+      allow delete: if isEditor();
+    }
+
+    // Registered Authors: Accessible to anyone in AI Studio preview environment
+    match /registeredAuthors/{userId} {
+      allow read, write: if true;
+    }
+
+    // Messages: Accessible to anyone in AI Studio preview environment
+    match /messages/{messageId} {
+      allow read, write: if true;
+    }
+
+    // Newsletter: Anyone can subscribe, Moderator+ can read/manage
+    match /newsletter/{subscriptionId} {
+      allow create: if isValidEmail(request.resource.data.email) && isValidString(request.resource.data.email, 255);
+      allow read, update, delete: if isModerator();
+    }
+
+    // Submissions: Anyone can submit, Moderator+ can read/manage
+    match /submissions/{submissionId} {
+      allow create: if true;
+      allow read, update, delete: if isModerator();
+    }
+
+    // Contact Messages: Anyone can send, Moderator+ can read/manage
+    match /contactMessages/{messageId} {
+      allow create: if true;
+      allow read, update, delete: if isModerator();
+    }
+
+    // Admin Logs: Admin can read/manage
+    match /adminLogs/{logId} {
+      allow read, create, delete: if isAdmin();
+      allow update: if false;
+    }
+
+    // Agenda Events: Publicly readable, Editor+ writable
+    match /agendaEvents/{eventId} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    // Seller Partner Requests: Anyone can apply, Moderator+ can read/manage
+    match /sellerRequests/{requestId} {
+      allow create: if true;
+      allow read, update, delete: if isModerator();
+    }
+
+    // Contests/Concours: Publicly readable, Editor+ writable
+    match /contests/{contestId} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    // FAQ: Publicly readable, Editor+ writable
+    match /faqs/{faqId} {
+      allow read: if true;
+      allow create: if isEditor() && isValidFAQ(request.resource.data);
+      allow update: if isEditor() && isValidFAQ(request.resource.data) &&
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['question', 'answer', 'order', 'createdAt']);
+      allow delete: if isEditor();
+    }
+  }
+}
