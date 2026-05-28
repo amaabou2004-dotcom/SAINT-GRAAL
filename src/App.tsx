@@ -1692,7 +1692,7 @@ export default function App() {
                       <img 
                         src={authorOfMonth.photo || AUTHOR_PLACEHOLDER} 
                         alt={`Photo de ${authorOfMonth.name}`} 
-                        className="relative z-10 w-full aspect-square object-cover rounded-3xl shadow-2xl" 
+                        className="relative z-10 w-full aspect-[4/5] object-contain bg-white rounded-3xl shadow-2xl p-2.5" 
                         referrerPolicy="no-referrer"
                         loading="lazy"
                         decoding="async"
@@ -1900,7 +1900,7 @@ export default function App() {
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all group flex flex-col h-full border border-gray-100 focus-within:ring-2 focus-within:ring-violet"
+                        className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-[0_25px_60px_-15px_rgba(139,92,246,0.22)] hover:-translate-y-1.5 transition-all duration-500 ease-out group flex flex-col h-full border border-gray-100 focus-within:ring-2 focus-within:ring-violet"
                       >
                         <div className="aspect-[3/4] overflow-hidden cursor-pointer relative" 
                              onClick={() => setSelectedBook(book)}
@@ -1912,7 +1912,7 @@ export default function App() {
                           <img 
                             src={book.cover || PLACEHOLDER_IMAGE} 
                             alt={`Couverture de ${book.title}`} 
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
                             referrerPolicy="no-referrer"
                             loading="lazy"
                             decoding="async"
@@ -2068,7 +2068,7 @@ export default function App() {
                   onKeyDown={(e) => e.key === 'Enter' && setSelectedAuthor(author)}
                   className="focus:outline-none"
                 >
-                  <div className="w-48 h-48 mx-auto mb-6 rounded-full overflow-hidden border-4 border-violet/10 p-1 group-hover:border-vert transition-colors relative">
+                  <div className="w-48 h-56 mx-auto mb-6 rounded-3xl overflow-hidden border-4 border-violet/10 p-2.5 group-hover:border-vert transition-colors relative bg-white flex items-center justify-center shadow-sm">
                     {author.id === authorOfMonth?.id && (
                       <div className="absolute top-2 right-2 bg-vert text-white text-[8px] font-black uppercase px-2 py-0.5 rounded-full z-20 shadow-lg border border-white/20">
                         Vedette
@@ -2077,7 +2077,7 @@ export default function App() {
                     <img 
                       src={author.photo || AUTHOR_PLACEHOLDER} 
                       alt={`Portrait de ${author.name}`} 
-                      className="w-full h-full object-cover rounded-full" 
+                      className="w-full h-full object-contain rounded-2xl" 
                       referrerPolicy="no-referrer"
                       loading="lazy"
                       decoding="async"
@@ -3313,11 +3313,11 @@ export default function App() {
                 <X aria-hidden="true" />
               </button>
               
-              <div className="w-48 h-48 mx-auto mb-8 rounded-full overflow-hidden border-8 border-violet/5 p-1 shadow-xl">
+              <div className="w-56 h-72 mx-auto mb-8 rounded-[2rem] overflow-hidden border-8 border-violet/5 p-2.5 bg-white flex items-center justify-center shadow-xl">
                 <img 
                   src={selectedAuthor.photo || AUTHOR_PLACEHOLDER} 
                   alt={`Photo de ${selectedAuthor.name}`} 
-                  className="w-full h-full object-cover rounded-full" 
+                  className="w-full h-full object-contain rounded-2xl" 
                   referrerPolicy="no-referrer"
                   loading="lazy"
                   decoding="async"
