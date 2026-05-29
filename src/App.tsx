@@ -185,6 +185,7 @@ export default function App() {
   const [adminBookSearch, setAdminBookSearch] = useState("");
   const [catalogueSearch, setCatalogueSearch] = useState("");
   const [catalogueGenre, setCatalogueGenre] = useState("Tous");
+  const [selectedSubGenre, setSelectedSubGenre] = useState("Tous");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<{ id: string; title: string; type: 'book' | 'author' }[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -2067,6 +2068,7 @@ export default function App() {
                     aria-pressed={catalogueGenre === genre}
                     onClick={() => {
                       setCatalogueGenre(genre);
+                      setSelectedSubGenre("Tous");
                       setCurrentPage(1);
                     }}
                     className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
@@ -2079,6 +2081,33 @@ export default function App() {
                   </button>
                 ))}
               </div>
+
+              {catalogueGenre === "SAINT GRAAL IVOIRIEN" && (
+                <div className="mt-6 flex flex-col items-center gap-2 border-t border-gray-100 pt-6 w-full max-w-xl mx-auto animate-in fade-in slide-in-from-top-2 duration-300">
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">
+                    Genres Littéraires :
+                  </span>
+                  <div className="flex flex-wrap justify-center gap-2" role="group" aria-label="Filtrer par genre littéraire">
+                    {["Tous", "Essai", "Roman", "Poésie", "Théâtre", "Littérature enfantine", "Nouvelles", "Récits"].map(lGenre => (
+                      <button
+                        key={lGenre}
+                        aria-pressed={selectedSubGenre === lGenre}
+                        onClick={() => {
+                          setSelectedSubGenre(lGenre);
+                          setCurrentPage(1);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                          selectedSubGenre === lGenre 
+                            ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' 
+                            : 'bg-white text-gray-500 hover:bg-gray-50 border border-gray-100'
+                        }`}
+                      >
+                        {lGenre}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -2091,8 +2120,21 @@ export default function App() {
                     book.title.toLowerCase().includes(searchLower) ||
                     book.summary.toLowerCase().includes(searchLower) ||
                     visibleAuthors.find(a => a.id === book.authorId)?.name.toLowerCase().includes(searchLower);
+                  
                   const matchesGenre = catalogueGenre === "Tous" || book.genre === catalogueGenre;
-                  return matchesSearch && matchesGenre;
+                  
+                  let matchesSubGenre = true;
+                  if (catalogueGenre === "SAINT GRAAL IVOIRIEN" && selectedSubGenre !== "Tous") {
+                    const lGenre = book.literaryGenre || "";
+                    if (selectedSubGenre === "Essai") {
+                      // Handle both standard French spelling 'Essai' and optional user spelling 'Essaie'
+                      matchesSubGenre = lGenre.toLowerCase() === "essai" || lGenre.toLowerCase() === "essaie";
+                    } else {
+                      matchesSubGenre = lGenre.toLowerCase() === selectedSubGenre.toLowerCase();
+                    }
+                  }
+
+                  return matchesSearch && matchesGenre && matchesSubGenre;
                 });
                 const totalPages = Math.ceil(filteredBooks.length / ITEMS_PER_PAGE);
                 const paginatedBooks = filteredBooks.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -2141,7 +2183,12 @@ export default function App() {
                           <div className="mt-auto space-y-4">
                             <div className="flex items-center justify-between">
                               <span className="text-xl font-black text-vert">{book.price.toLocaleString()} CFA</span>
-                              <span className="px-2 py-1 bg-gray-100 text-[9px] font-black uppercase text-gray-500 rounded tracking-widest">{book.genre}</span>
+                              <div className="flex flex-col gap-1 items-end">
+                                <span className="px-2 py-0.5 bg-gray-100 text-[9px] font-black uppercase text-gray-500 rounded tracking-widest leading-none">{book.genre}</span>
+                                {book.literaryGenre && (
+                                  <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 text-[9px] font-extrabold uppercase rounded tracking-wider leading-none">{book.literaryGenre}</span>
+                                )}
+                              </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <button 
@@ -3524,7 +3571,12 @@ export default function App() {
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <h2 id="modal-book-title" className="text-3xl font-black text-violet mb-1">{selectedBook.title}</h2>
-                    <p className="text-[10px] font-black text-vert uppercase tracking-[0.2em] mb-2">{selectedBook.genre}</p>
+                    <div className="flex gap-2 items-center flex-wrap mb-2">
+                      <span className="text-[10px] font-black text-vert uppercase tracking-[0.2em]">{selectedBook.genre}</span>
+                      {selectedBook.literaryGenre && (
+                        <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 text-[9px] font-extrabold uppercase rounded tracking-wider leading-none">{selectedBook.literaryGenre}</span>
+                      )}
+                    </div>
                     <p className="text-lg font-bold text-gray-500 italic">
                       Par {authors.find(a => a.id === selectedBook.authorId)?.name || "Auteur inconnu"}
                     </p>

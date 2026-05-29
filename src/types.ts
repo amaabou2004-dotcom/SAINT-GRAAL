@@ -45,6 +45,7 @@ export interface BookItem {
   summary: string;
   cover: string;
   genre: string;
+  literaryGenre?: string;
   order?: number;
 }
 

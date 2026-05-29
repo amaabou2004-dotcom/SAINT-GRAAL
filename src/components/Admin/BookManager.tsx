@@ -167,9 +167,16 @@ export const BookManager: React.FC<BookManagerProps> = ({
                     </span>
                   </td>
                   <td className="p-6 hidden lg:table-cell">
-                    <span className="px-3 py-1 bg-violet/10 text-violet text-[10px] font-black uppercase tracking-widest rounded-full">
-                      {book.genre}
-                    </span>
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className="px-3 py-1 bg-violet/10 text-violet text-[10px] font-black uppercase tracking-widest rounded-full">
+                        {book.genre}
+                      </span>
+                      {book.literaryGenre && (
+                        <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-600 text-[9px] font-extrabold uppercase tracking-wider rounded">
+                          {book.literaryGenre}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="p-6">
                     <span className="font-mono text-sm whitespace-nowrap">{book.price} CFA</span>
@@ -228,7 +235,12 @@ export const BookManager: React.FC<BookManagerProps> = ({
                   {authors.find(a => a.id === book.authorId)?.name || 'Inconnu'}
                 </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase bg-violet/10 text-violet px-2 py-0.5 rounded-full">{book.genre}</span>
+                  <div className="flex flex-col gap-1 items-start">
+                    <span className="text-[10px] font-black uppercase bg-violet/10 text-violet px-2 py-0.5 rounded-full">{book.genre}</span>
+                    {book.literaryGenre && (
+                      <span className="text-[9px] font-extrabold uppercase bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded">{book.literaryGenre}</span>
+                    )}
+                  </div>
                   <span className="font-mono text-sm font-bold text-vert">{book.price} CFA</span>
                 </div>
               </div>

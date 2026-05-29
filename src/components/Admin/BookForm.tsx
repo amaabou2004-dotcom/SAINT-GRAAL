@@ -11,6 +11,7 @@ interface BookFormProps {
 }
 
 const GENRES = ["SAINT GRAAL IVOIRIEN", "IVOIRE STORY"];
+const LITERARY_GENRES = ["Essai", "Roman", "Poésie", "Théâtre", "Littérature enfantine", "Nouvelles", "Récits"];
 
 export const BookForm: React.FC<BookFormProps> = ({
   initialData, authors, onSubmit, onCancel
@@ -60,6 +61,7 @@ export const BookForm: React.FC<BookFormProps> = ({
           title: (formData.get('title') as string).trim() || 'Sans titre',
           authorId: (formData.get('authorId') as string) || '',
           genre: (formData.get('genre') as string) || GENRES[0],
+          literaryGenre: (formData.get('literaryGenre') as string) || '',
           price: (formData.get('price') as string).trim() || '0',
           isbn: (formData.get('isbn') as string).trim() || 'N/A',
           publicationDate: (formData.get('publicationDate') as string) || new Date().toISOString().split('T')[0],
@@ -114,6 +116,18 @@ export const BookForm: React.FC<BookFormProps> = ({
                 className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-violet outline-none transition-all font-bold dark:text-white" 
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Genre Littéraire</label>
+            <select 
+              name="literaryGenre" 
+              defaultValue={initialData?.literaryGenre || ""} 
+              className="w-full px-6 py-4 rounded-2xl bg-gray-50 dark:bg-gray-900 border-2 border-transparent focus:border-violet outline-none transition-all font-bold dark:text-white appearance-none"
+            >
+              <option value="">Sélectionner un genre littéraire (Optionnel)</option>
+              {LITERARY_GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
