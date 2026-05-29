@@ -219,5 +219,45 @@ export interface FAQItem {
   answer: string;
   order?: number;
   createdAt: string;
+  isPending?: boolean;
+  authorName?: string;
 }
+
+export interface ContestSubmission {
+  id: string;
+  contestId: string;
+  contestTitle: string;
+  name: string;
+  email: string;
+  phone: string;
+  title: string;
+  synopsis?: string;
+  content: string;
+  fileName?: string;
+  fileUrl?: string;
+  status: 'pending' | 'accepted' | 'refused';
+  internalComment?: string;
+  createdAt: string;
+}
+
+export interface EventRegistration {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  eventDate: string;
+  name: string;
+  email: string;
+  phone: string;
+  isNewsletterConsent: boolean;
+  createdAt: string;
+}
+
+export interface AnalyticsEvent {
+  id: string;
+  bookId: string;
+  bookTitle: string;
+  eventType: 'view' | 'order_click' | 'order_submit';
+  timestamp: string;
+}
+
 

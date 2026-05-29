@@ -10,7 +10,7 @@ import {
   ChevronRight, ChevronLeft, MessageSquare, Mail, MapPin, GripVertical, Lock,
   Search, Bell, Eye, EyeOff, Shield, BookOpen, Layout, Globe, Megaphone, HelpCircle, Share2, Star, Quote,
   Facebook, Instagram, MessageCircle, Store as StoreIcon,
-  BarChart3, PieChart, Activity, UserPlus, FileText, CheckCircle, AlertCircle, Clock, Moon, Sun, MoreVertical, ExternalLink
+  BarChart3, PieChart, Activity, UserPlus, FileText, CheckCircle, AlertCircle, Clock, Moon, Sun, MoreVertical, ExternalLink, Calendar
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area 
@@ -22,7 +22,7 @@ import {
   OperationType, Author, BookItem, NewsItem, GalleryItem,
   RegisteredAuthor, ChatMessage, SiteConfig, Submission,
   ContactMessage, AdminLog, NewsletterSubscriber, Store, Testimonial,
-  AgendaEvent, SellerRequest, Contest, FAQItem
+  AgendaEvent, SellerRequest, Contest, FAQItem, ContestSubmission, EventRegistration, AnalyticsEvent
 } from './types';
 import { handleFirestoreError } from './lib/utils';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -94,6 +94,7 @@ export default function App() {
   const [gallery, setGallery] = useState<GalleryItem[]>([]);
   const [newsletter, setNewsletter] = useState<{id: string, email: string, createdAt: string}[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [contestSubmissions, setContestSubmissions] = useState<ContestSubmission[]>([]);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
   const [adminLogs, setAdminLogs] = useState<AdminLog[]>([]);
   const [darkMode, setDarkMode] = useState(false);
@@ -109,7 +110,11 @@ export default function App() {
   const [agendaEvents, setAgendaEvents] = useState<AgendaEvent[]>([]);
   const [contests, setContests] = useState<Contest[]>([]);
   const [sellerRequests, setSellerRequests] = useState<SellerRequest[]>([]);
+  const [eventRegistrations, setEventRegistrations] = useState<EventRegistration[]>([]);
+  const [analyticsEvents, setAnalyticsEvents] = useState<AnalyticsEvent[]>([]);
   const [isSellerModalOpen, setIsSellerModalOpen] = useState(false);
+  const [isRegModalOpen, setIsRegModalOpen] = useState(false);
+  const [selectedRegEvent, setSelectedRegEvent] = useState<AgendaEvent | null>(null);
   
   const visibleAuthors = authors.filter(a => !a.isHidden);
   const hiddenAuthorIds = authors.filter(a => a.isHidden).map(a => a.id);
@@ -145,14 +150,30 @@ export default function App() {
   const [submissionMessage, setSubmissionMessage] = useState('');
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-  const [selectedBook, setSelectedBook] = useState<BookItem | null>(null);
+  const [selectedBook, setSelectedBookInternal] = useState<BookItem | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<Author | null>(null);
-  const [checkoutBook, setCheckoutBook] = useState<BookItem | null>(null);
+  const [checkoutBook, setCheckoutBookInternal] = useState<BookItem | null>(null);
+
+  const setSelectedBook = (book: BookItem | null) => {
+    setSelectedBookInternal(book);
+    if (book) {
+      recordAnalyticsEvent(book.id, book.title, 'view');
+    }
+  };
+
+  const setCheckoutBook = (book: BookItem | null) => {
+    setCheckoutBookInternal(book);
+    if (book) {
+      recordAnalyticsEvent(book.id, book.title, 'order_click');
+    }
+  };
   const [checkoutForm, setCheckoutForm] = useState({
     lastName: '',
     firstName: '',
     deliveryAddress: ''
   });
+  const [readerQuestionForm, setReaderQuestionForm] = useState({ name: '', question: '' });
+  const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot'>('login');
@@ -191,6 +212,8 @@ export default function App() {
     e.preventDefault();
     if (!checkoutBook) return;
 
+    recordAnalyticsEvent(checkoutBook.id, checkoutBook.title, 'order_submit');
+
     const nom = checkoutForm.lastName.trim();
     const prenom = checkoutForm.firstName.trim();
     const adresse = checkoutForm.deliveryAddress.trim();
@@ -213,6 +236,34 @@ export default function App() {
     // Close checkout modal & reset form
     setCheckoutBook(null);
     setCheckoutForm({ lastName: '', firstName: '', deliveryAddress: '' });
+  };
+
+  const handleAskQuestionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!readerQuestionForm.question.trim()) return;
+
+    setIsSubmittingQuestion(true);
+    const id = Date.now().toString();
+    const cleanName = readerQuestionForm.name.trim() || "Lecteur Anonyme";
+    const newItem: FAQItem = {
+      id,
+      question: readerQuestionForm.question.trim(),
+      answer: "",
+      isPending: true,
+      authorName: cleanName,
+      createdAt: new Date().toISOString()
+    };
+
+    try {
+      await setDoc(doc(db, 'faqs', id), newItem);
+      notify("Merci ! Votre question a été enregistrée pour validation.", "success");
+      setReaderQuestionForm({ name: '', question: '' });
+      logAction(`Posé question FAQ`, 'faq', id);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'faqs');
+    } finally {
+      setIsSubmittingQuestion(false);
+    }
   };
 
   // --- SEO Optimization ---
@@ -455,6 +506,9 @@ export default function App() {
     let unsubContactMessages: (() => void) | null = null;
     let unsubAdminLogs: (() => void) | null = null;
     let unsubSellerRequests: (() => void) | null = null;
+    let unsubContestSubmissions: (() => void) | null = null;
+    let unsubEventRegistrations: (() => void) | null = null;
+    let unsubAnalyticsEvents: (() => void) | null = null;
 
     const unsubAuth = onAuthStateChanged(auth, (user) => {
       setIsAuthReady(true);
@@ -468,6 +522,9 @@ export default function App() {
       if (unsubContactMessages) unsubContactMessages();
       if (unsubAdminLogs) unsubAdminLogs();
       if (unsubSellerRequests) unsubSellerRequests();
+      if (unsubContestSubmissions) unsubContestSubmissions();
+      if (unsubEventRegistrations) unsubEventRegistrations();
+      if (unsubAnalyticsEvents) unsubAnalyticsEvents();
 
       if (user) {
         // Listen to registered authors (only when authenticated)
@@ -519,6 +576,21 @@ export default function App() {
                 setSellerRequests(snap.docs.map(d => ({ id: d.id, ...d.data() } as SellerRequest)));
               }, (err) => console.error("SellerRequests listener error:", err));
             }
+            if (!unsubContestSubmissions) {
+              unsubContestSubmissions = onSnapshot(query(collection(db, 'contestSubmissions'), orderBy('createdAt', 'desc')), (snap) => {
+                setContestSubmissions(snap.docs.map(d => ({ id: d.id, ...d.data() } as ContestSubmission)));
+              }, (err) => console.error("ContestSubmissions listener error:", err));
+            }
+            if (!unsubEventRegistrations) {
+              unsubEventRegistrations = onSnapshot(query(collection(db, 'eventRegistrations'), orderBy('createdAt', 'desc')), (snap) => {
+                setEventRegistrations(snap.docs.map(d => ({ id: d.id, ...d.data() } as EventRegistration)));
+              }, (err) => console.error("EventRegistrations listener error:", err));
+            }
+            if (!unsubAnalyticsEvents) {
+              unsubAnalyticsEvents = onSnapshot(query(collection(db, 'analyticsEvents'), orderBy('timestamp', 'desc')), (snap) => {
+                setAnalyticsEvents(snap.docs.map(d => ({ id: d.id, ...d.data() } as AnalyticsEvent)));
+              }, (err) => console.error("AnalyticsEvents listener error:", err));
+            }
           }
         }, (err) => handleFirestoreError(err, OperationType.LIST, 'registeredAuthors'));
 
@@ -554,8 +626,11 @@ export default function App() {
       if (unsubContactMessages) unsubContactMessages();
       if (unsubAdminLogs) unsubAdminLogs();
       if (unsubSellerRequests) unsubSellerRequests();
+      if (unsubContestSubmissions) unsubContestSubmissions();
+      if (unsubEventRegistrations) unsubEventRegistrations();
       if (unsubRegAuthors) unsubRegAuthors();
       if (unsubMessages) unsubMessages();
+      if (unsubAnalyticsEvents) unsubAnalyticsEvents();
     };
   }, []); // Removed registeredAuthors.length dependency to avoid infinite loops
 
@@ -1051,6 +1126,56 @@ export default function App() {
     }
   };
 
+  const addEventRegistration = async (data: Omit<EventRegistration, 'id' | 'createdAt'>) => {
+    const id = Date.now().toString();
+    try {
+      await setDoc(doc(db, 'eventRegistrations', id), {
+        id,
+        ...data,
+        createdAt: new Date().toISOString()
+      });
+      if (data.isNewsletterConsent) {
+        try {
+          await addDoc(collection(db, 'newsletter'), {
+            email: data.email,
+            createdAt: new Date().toISOString()
+          });
+        } catch (newsletterErr) {
+          console.warn("Could not subscribe to newsletter during pre-registration:", newsletterErr);
+        }
+      }
+      notify(`Félicitations ! Votre inscription pour "${data.eventTitle}" a bien été prise en compte.`);
+      logAction(`Pré-inscription à l'événement`, 'agendaEvent', id);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, `eventRegistrations/${id}`);
+    }
+  };
+
+  const deleteEventRegistration = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'eventRegistrations', id));
+      notify("Pré-inscription supprimée");
+      logAction(`Supprimé pré-inscription`, 'agendaEvent', id);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `eventRegistrations/${id}`);
+    }
+  };
+
+  async function recordAnalyticsEvent(bookId: string, bookTitle: string, eventType: 'view' | 'order_click' | 'order_submit') {
+    const id = Date.now().toString() + '_' + Math.random().toString(36).substr(2, 9);
+    try {
+      await setDoc(doc(db, 'analyticsEvents', id), {
+        id,
+        bookId,
+        bookTitle,
+        eventType,
+        timestamp: new Date().toISOString()
+      });
+    } catch (err) {
+      console.warn("Failed silently to log analytics event:", err);
+    }
+  }
+
   // --- Contests / Concours Event handlers ---
   const addContest = async (data: Omit<Contest, 'id' | 'createdAt'>) => {
     const id = Date.now().toString();
@@ -1085,6 +1210,52 @@ export default function App() {
       logAction(`Supprimé concours id: ${id}`, 'contests', id);
     } catch (err) {
       handleFirestoreError(err, OperationType.DELETE, `contests/${id}`);
+    }
+  };
+
+  const addContestSubmission = async (data: Omit<ContestSubmission, 'id' | 'createdAt' | 'status'>) => {
+    const id = Date.now().toString();
+    const newSubmission: ContestSubmission = {
+      id,
+      ...data,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+    try {
+      await setDoc(doc(db, 'contestSubmissions', id), newSubmission);
+      // Mode online increment of contest participantsCount
+      const contestRef = doc(db, 'contests', data.contestId);
+      const contestSnap = await getDoc(contestRef);
+      if (contestSnap.exists()) {
+        const currentData = contestSnap.data() as Contest;
+        await updateDoc(contestRef, {
+          participantsCount: (currentData.participantsCount || 0) + 1
+        });
+      }
+      logAction(`Soumission de concours de ${data.name} pour ${data.contestTitle}`, 'contestSubmissions', id);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, 'contestSubmissions');
+      throw err;
+    }
+  };
+
+  const updateContestSubmission = async (id: string, updates: Partial<ContestSubmission>) => {
+    try {
+      await updateDoc(doc(db, 'contestSubmissions', id), updates);
+      notify("Candidature mise à jour");
+      logAction(`Mis à jour candidature concours id: ${id}`, 'contestSubmissions', id);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.UPDATE, `contestSubmissions/${id}`);
+    }
+  };
+
+  const deleteContestSubmission = async (id: string) => {
+    try {
+      await deleteDoc(doc(db, 'contestSubmissions', id));
+      notify("Candidature supprimée");
+      logAction(`Supprimé candidature concours id: ${id}`, 'contestSubmissions', id);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `contestSubmissions/${id}`);
     }
   };
 
@@ -2408,7 +2579,11 @@ export default function App() {
       )}
 
       {/* Contests (Concours) Section */}
-      <PublicContests contests={contests} darkMode={darkMode} />
+      <PublicContests 
+        contests={contests} 
+        darkMode={darkMode} 
+        onSubmitContestSubmission={addContestSubmission} 
+      />
 
       {/* FAQ Section */}
       <section id="faq" className="py-24 md:py-32 bg-white flex-shrink-0">
@@ -2419,11 +2594,11 @@ export default function App() {
           </div>
 
           <div className="space-y-4">
-            {(faqs && faqs.length > 0 ? [...faqs].sort((a,b) => (a.order ?? 0) - (b.order ?? 0)).map(f => ({ q: f.question, a: f.answer, id: f.id })) : [
-              { q: "Comment soumettre mon manuscrit ?", a: "Vous pouvez utiliser notre formulaire de soumission en ligne. Nous acceptons les formats PDF, DOC et DOCX.", id: "def1" },
-              { q: "Quels sont vos délais de réponse ?", a: "Notre comité de lecture examine chaque manuscrit avec attention. Le délai moyen est de 4 à 8 semaines.", id: "def2" },
-              { q: "Quels sont vos modes de publication ?", a: "Nous publions à compte d'auteur et à compte d'éditeur. Tout dépend de la qualité du manuscrit et du choix de l'auteur.", id: "def3" },
-              { q: "Comment sont calculés les droits d'auteur ?", a: "Les modalités sont définies dans le contrat d'édition, basées sur un pourcentage du prix de vente public hors taxes.", id: "def4" }
+            {(faqs && faqs.length > 0 ? [...faqs].filter(f => !f.isPending).sort((a,b) => (a.order ?? 0) - (b.order ?? 0)).map(f => ({ q: f.question, a: f.answer, id: f.id, authorName: f.authorName })) : [
+              { q: "Comment soumettre mon manuscrit ?", a: "Vous pouvez utiliser notre formulaire de soumission en ligne. Nous acceptons les formats PDF, DOC et DOCX.", id: "def1", authorName: null },
+              { q: "Quels sont vos délais de réponse ?", a: "Notre comité de lecture examine chaque manuscrit avec attention. Le délai moyen est de 4 à 8 semaines.", id: "def2", authorName: null },
+              { q: "Quels sont vos modes de publication ?", a: "Nous publions à compte d'auteur et à compte d'éditeur. Tout dépend de la qualité du manuscrit et du choix de l'auteur.", id: "def3", authorName: null },
+              { q: "Comment sont calculés les droits d'auteur ?", a: "Les modalités sont définies dans le contrat d'édition, basées sur un pourcentage du prix de vente public hors taxes.", id: "def4", authorName: null }
             ]).map((item) => (
               <motion.div 
                 key={item.id}
@@ -2435,9 +2610,65 @@ export default function App() {
                   <HelpCircle className="w-5 h-5 text-vert" />
                   {item.q}
                 </h4>
+                {item.authorName && (
+                  <p className="text-[10px] text-violet font-black uppercase tracking-wider mb-2 ml-8 bg-violet/5 px-2.5 py-1 rounded-md inline-block">
+                    Question de : {item.authorName}
+                  </p>
+                )}
                 <p className="text-gray-600 text-sm leading-relaxed ml-8">{item.a}</p>
               </motion.div>
             ))}
+          </div>
+
+          {/* Interactive Question Submission Form */}
+          <div className="mt-16 bg-slate-50 border border-slate-100 p-8 md:p-10 rounded-[2rem] shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-violet/10 text-violet rounded-2xl flex items-center justify-center">
+                <Send className="w-5 h-5 text-violet" />
+              </div>
+              <div>
+                <h3 className="font-black text-xl text-violet">Une question ? Posez-la publiquement</h3>
+                <p className="text-xs text-slate-500">Notre équipe y répondra et la publiera dans cette foire aux questions.</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleAskQuestionSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Votre Nom ou Pseudo</label>
+                  <input
+                    type="text"
+                    value={readerQuestionForm.name}
+                    onChange={(e) => setReaderQuestionForm({ ...readerQuestionForm, name: e.target.value })}
+                    placeholder="Ex: LecteurCurieux (Laisser vide pour anonyme)"
+                    className="w-full p-4 rounded-xl border border-slate-100 bg-white outline-none text-sm focus:border-violet transition-all font-semibold text-slate-700"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Votre Question *</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={readerQuestionForm.question}
+                  onChange={(e) => setReaderQuestionForm({ ...readerQuestionForm, question: e.target.value })}
+                  placeholder="Ex: Allez-vous faire une dédicace ou un salon du livre prochainement ?"
+                  className="w-full p-4 rounded-xl border border-slate-100 bg-white outline-none text-sm focus:border-violet transition-all font-medium resize-none shadow-sm text-slate-700"
+                />
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={isSubmittingQuestion}
+                  className="bg-violet hover:bg-violet/90 text-white px-8 py-3.5 rounded-xl font-bold transition-all shadow-md active:scale-95 text-sm flex items-center gap-2 hover:shadow-lg hover:shadow-violet-200 disabled:opacity-50"
+                >
+                  <Send className="w-4 h-4 text-white" />
+                  <span>{isSubmittingQuestion ? "Envoi..." : "Envoyer ma question"}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </section>
@@ -2642,6 +2873,20 @@ export default function App() {
                         {/* Description excerpt */}
                         <div className="md:max-w-xs text-xs text-gray-500 border-l border-gray-200 pl-4 md:border-l-2 py-0.5 whitespace-pre-line leading-relaxed font-semibold">
                           {evt.description || "Rejoignez-nous pour fêter les lettres !"}
+                        </div>
+
+                        {/* Public Registration Action */}
+                        <div className="flex-shrink-0 w-full md:w-auto">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedRegEvent(evt);
+                              setIsRegModalOpen(true);
+                            }}
+                            className="w-full md:w-auto px-5 py-3.5 bg-violet hover:bg-black text-white rounded-2xl text-[11px] font-black uppercase tracking-wider shadow-lg shadow-violet/15 hover:scale-102 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                          >
+                            <Calendar className="w-3.5 h-3.5" /> Je participe
+                          </button>
                         </div>
                       </motion.div>
                     );
@@ -3493,6 +3738,148 @@ export default function App() {
       </AnimatePresence>
 
       <AnimatePresence>
+        {isRegModalOpen && selectedRegEvent && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-[2rem] p-8 w-full max-w-lg shadow-2xl relative"
+            >
+              <button 
+                onClick={() => {
+                  setIsRegModalOpen(false);
+                  setSelectedRegEvent(null);
+                }} 
+                className="absolute top-6 right-6 p-2 rounded-xl text-gray-400 hover:text-gray-950 hover:bg-gray-50 transition-all cursor-pointer"
+                title="Fermer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-violet/10 rounded-2xl flex items-center justify-center text-violet">
+                  <Calendar className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-vert text-[9px] font-black uppercase tracking-[0.2em] block">S'inscrire à l'événement</span>
+                  <h3 className="text-xl font-black text-gray-900 truncate max-w-[320px]">{selectedRegEvent.title}</h3>
+                </div>
+              </div>
+
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 text-xs text-gray-600 mb-6 space-y-1 font-semibold leading-relaxed">
+                <p><strong>Date :</strong> {new Date(selectedRegEvent.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} {selectedRegEvent.time ? `à ${selectedRegEvent.time}` : ''}</p>
+                <p><strong>Lieu :</strong> {selectedRegEvent.location}</p>
+              </div>
+
+              <form 
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const form = e.currentTarget;
+                  const formData = new FormData(form);
+                  const name = (formData.get('name') as string || '').trim();
+                  const email = (formData.get('email') as string || '').trim();
+                  const phone = (formData.get('phone') as string || '').trim();
+                  const isNewsletterConsent = formData.get('isNewsletterConsent') === 'on';
+
+                  if (!name || !email) {
+                    notify("Nom et e-mail sont obligatoires", "error");
+                    return;
+                  }
+
+                  try {
+                    await addEventRegistration({
+                      eventId: selectedRegEvent.id,
+                      eventTitle: selectedRegEvent.title,
+                      eventDate: selectedRegEvent.date,
+                      name,
+                      email,
+                      phone,
+                      isNewsletterConsent
+                    });
+                    form.reset();
+                    setIsRegModalOpen(false);
+                    setSelectedRegEvent(null);
+                  } catch (err) {
+                    console.error("Event registration error:", err);
+                  }
+                }} 
+                className="space-y-4"
+              >
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 block">Nom complet *</label>
+                  <input
+                    type="text"
+                    name="name"
+                    required
+                    placeholder="Ex: Kouamé N'Guessan"
+                    className="w-full p-4 rounded-xl border border-gray-150 outline-none text-sm transition-all focus:border-violet bg-gray-50/50 font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 block">Adresse e-mail *</label>
+                  <input
+                    type="email"
+                    name="email"
+                    required
+                    placeholder="Ex: kouame@gmail.com"
+                    className="w-full p-4 rounded-xl border border-gray-150 outline-none text-sm transition-all focus:border-violet bg-gray-50/50 font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-gray-400 block">Numéro de téléphone (Optionnel)</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    placeholder="Ex: +225 07 00 00 00 00"
+                    className="w-full p-4 rounded-xl border border-gray-150 outline-none text-sm transition-all focus:border-violet bg-gray-50/50 font-semibold"
+                  />
+                </div>
+
+                <label className="flex items-start gap-3 p-4 bg-violet/[0.02] border border-violet/15 hover:bg-violet/[0.04] rounded-2xl cursor-pointer transition-all group mt-2">
+                  <input
+                    type="checkbox"
+                    name="isNewsletterConsent"
+                    defaultChecked
+                    className="mt-0.5 rounded border-gray-300 text-violet focus:ring-violet cursor-pointer h-4 w-4"
+                  />
+                  <div className="text-xs text-gray-600 font-semibold leading-relaxed">
+                    Je souhaite m'abonner à la newsletter du Saint Graal Ivoirien pour recevoir les prochaines nouveautés et les invitations exclusives.
+                  </div>
+                </label>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsRegModalOpen(false);
+                      setSelectedRegEvent(null);
+                    }}
+                    className="flex-1 py-3.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold uppercase text-xs tracking-wider rounded-xl transition-all cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-4 bg-violet hover:bg-black text-white font-black uppercase text-xs tracking-wider rounded-xl shadow-lg shadow-violet/20 transition-all cursor-pointer"
+                  >
+                    Confirmer ma présence
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showAdminLogin && (
           <motion.div 
             initial={{ opacity: 0 }}
@@ -3625,6 +4012,7 @@ export default function App() {
                   messages={contactMessages}
                   logs={adminLogs}
                   news={news}
+                  analyticsEvents={analyticsEvents}
                   darkMode={darkMode}
                   onTabChange={(tab, action) => {
                     setAdminTab(tab as any);
@@ -3794,6 +4182,9 @@ export default function App() {
                   onAdd={addContest}
                   onUpdate={updateContest}
                   onDelete={deleteContest}
+                  contestSubmissions={contestSubmissions}
+                  onUpdateSubmission={updateContestSubmission}
+                  onDeleteSubmission={deleteContestSubmission}
                   darkMode={darkMode}
                 />
               )}
@@ -3822,9 +4213,11 @@ export default function App() {
                 <AgendaManager 
                   events={agendaEvents}
                   authors={authors}
+                  registrations={eventRegistrations}
                   onAdd={addAgendaEvent}
                   onUpdate={updateAgendaEvent}
                   onDelete={deleteAgendaEvent}
+                  onDeleteRegistration={deleteEventRegistration}
                   darkMode={darkMode}
                 />
               )}

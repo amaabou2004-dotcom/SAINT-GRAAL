@@ -88,7 +88,7 @@ service cloud.firestore {
 
     function isValidFAQ(data) {
       return data.keys().hasAll(['id', 'question', 'answer', 'createdAt']) &&
-             data.keys().size() >= 4 && data.keys().size() <= 5 &&
+             data.keys().size() >= 4 && data.keys().size() <= 8 &&
              isValidString(data.question, 1000) &&
              isValidString(data.answer, 5000) &&
              isValidString(data.id, 128) &&
@@ -196,13 +196,31 @@ service cloud.firestore {
       allow write: if isEditor();
     }
 
+    // Contest Submissions: Anyone can submit, Moderator+ can read/manage
+    match /contestSubmissions/{submissionId} {
+      allow create: if true;
+      allow read, update, delete: if isModerator();
+    }
+
+    // Event Registrations: Anyone can register, Moderator+ can read/manage
+    match /eventRegistrations/{registrationId} {
+      allow create: if true;
+      allow read, update, delete: if isModerator();
+    }
+
     // FAQ: Publicly readable, Editor+ writable
     match /faqs/{faqId} {
       allow read: if true;
-      allow create: if isEditor() && isValidFAQ(request.resource.data);
+      allow create: if isValidFAQ(request.resource.data);
       allow update: if isEditor() && isValidFAQ(request.resource.data) &&
-                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['question', 'answer', 'order', 'createdAt']);
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['question', 'answer', 'order', 'createdAt', 'isPending', 'authorName']);
       allow delete: if isEditor();
+    }
+
+    // Analytics Events: Anyone can log clicks and views, Editor+ can read/manage
+    match /analyticsEvents/{eventId} {
+      allow create: if true;
+      allow read, update, delete: if true;
     }
   }
 }

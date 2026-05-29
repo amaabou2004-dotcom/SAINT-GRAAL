@@ -4,20 +4,22 @@ import {
   FileText, Activity, Users, AlertCircle, ChevronLeft, 
   ChevronRight, Sparkles, Filter, X, Image as ImageIcon, Loader2
 } from 'lucide-react';
-import { AgendaEvent, EventType, Author } from '../../types';
+import { AgendaEvent, EventType, Author, EventRegistration } from '../../types';
 import { compressImage } from '../../lib/utils';
 
 interface AgendaManagerProps {
   events: AgendaEvent[];
   authors: Author[];
+  registrations?: EventRegistration[];
   onAdd: (data: Omit<AgendaEvent, 'id' | 'createdAt'>) => Promise<void>;
   onUpdate: (id: string, data: Partial<AgendaEvent>) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onDeleteRegistration?: (id: string) => Promise<void>;
   darkMode: boolean;
 }
 
 export const AgendaManager: React.FC<AgendaManagerProps> = ({
-  events, authors, onAdd, onUpdate, onDelete, darkMode
+  events, authors, registrations = [], onAdd, onUpdate, onDelete, onDeleteRegistration, darkMode
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -403,13 +405,68 @@ export const AgendaManager: React.FC<AgendaManagerProps> = ({
                   )}
                 </div>
 
-                <div>
+                 <div>
                   <p className="text-[10px] uppercase font-black tracking-wider text-gray-400 mb-2">Description / Sommaire</p>
                   <div className={`p-4 rounded-xl text-xs font-semibold leading-relaxed leading-6 border whitespace-pre-wrap ${
                     darkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-gray-50 border-gray-100'
                   }`}>
                     {selectedEventDetails.description || "Aucune description de l'événement."}
                   </div>
+                </div>
+
+                {/* Event Registrations Checklist */}
+                <div className="pt-4 border-t border-gray-150 dark:border-gray-700 space-y-3">
+                  <p className="text-[10px] uppercase font-black tracking-wider text-gray-400 font-extrabold mb-2">
+                    Pré-inscriptions ({registrations.filter(r => r.eventId === selectedEventDetails.id).length})
+                  </p>
+                  {(() => {
+                    const eventRegs = registrations.filter(r => r.eventId === selectedEventDetails.id);
+                    if (eventRegs.length === 0) {
+                      return (
+                        <div className={`p-4 rounded-xl text-center border border-dashed text-xs font-bold uppercase tracking-wider ${
+                          darkMode ? 'bg-gray-950/40 border-gray-800 text-gray-500' : 'bg-gray-50/50 border-gray-150 text-gray-400'
+                        }`}>
+                          Aucune inscription
+                        </div>
+                      );
+                    }
+                    return (
+                      <div className="max-h-48 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                        {eventRegs.map(reg => (
+                          <div 
+                            key={reg.id} 
+                            className={`p-3 rounded-xl border flex justify-between items-start gap-4 text-xs font-semibold ${
+                              darkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-gray-100/50 border-gray-100 shadow-sm'
+                            }`}
+                          >
+                            <div className="min-w-0 font-sans space-y-0.5 text-left">
+                              <p className="font-extrabold text-gray-900 dark:text-gray-100 leading-none">{reg.name}</p>
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-semibold">{reg.email}</p>
+                              {reg.phone && <p className="text-[10px] text-violet font-bold">{reg.phone}</p>}
+                              {reg.isNewsletterConsent && (
+                                <span className="inline-block px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-500 mt-1">
+                                  Abonné Newsletter
+                                </span>
+                              )}
+                            </div>
+                            {onDeleteRegistration && (
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm(`Voulez-vous supprimer définitivement la pré-inscription de ${reg.name} ?`)) {
+                                    await onDeleteRegistration(reg.id);
+                                  }
+                                }}
+                                className="p-1 px-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 cursor-pointer transition-colors"
+                                title="Supprimer l'inscription"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-150 dark:border-gray-700">

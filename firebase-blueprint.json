@@ -200,9 +200,63 @@
         "question": { "type": "string" },
         "answer": { "type": "string" },
         "order": { "type": "number" },
-        "createdAt": { "type": "string" }
+        "createdAt": { "type": "string" },
+        "isPending": { "type": "boolean" },
+        "authorName": { "type": "string" }
       },
       "required": ["id", "question", "answer", "createdAt"]
+    },
+    "ContestSubmission": {
+      "title": "Contest Submission",
+      "description": "Manuscripts submitted for literary contests",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "contestId": { "type": "string" },
+        "contestTitle": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "title": { "type": "string" },
+        "synopsis": { "type": "string" },
+        "content": { "type": "string" },
+        "fileName": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "refused"] },
+        "internalComment": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "contestId", "contestTitle", "name", "email", "phone", "title", "status", "createdAt"]
+    },
+    "EventRegistration": {
+      "title": "Event Pre-registration",
+      "description": "Confirmed presence of readers for an agenda event",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "eventId": { "type": "string" },
+        "eventTitle": { "type": "string" },
+        "eventDate": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "isNewsletterConsent": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "eventId", "eventTitle", "eventDate", "name", "email", "createdAt"]
+    },
+    "AnalyticsEvent": {
+      "title": "Analytics Event",
+      "description": "Logged user interaction showing clicks and views on books / order-now actions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bookId": { "type": "string" },
+        "bookTitle": { "type": "string" },
+        "eventType": { "type": "string", "enum": ["view", "order_click", "order_submit"] },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "bookId", "bookTitle", "eventType", "timestamp"]
     }
   },
   "firestore": {
@@ -261,6 +315,18 @@
     "/faqs/{faqId}": {
       "schema": "FAQ",
       "description": "Frequently Asked Questions"
+    },
+    "/contestSubmissions/{submissionId}": {
+      "schema": "ContestSubmission",
+      "description": "Manuscripts submitted in contests"
+    },
+    "/eventRegistrations/{registrationId}": {
+      "schema": "EventRegistration",
+      "description": "Pre-inscriptions / confirmations of presence for agenda events"
+    },
+    "/analyticsEvents/{eventId}": {
+      "schema": "AnalyticsEvent",
+      "description": "Logged analytics clicks and views on books and order triggers"
     }
   }
 }
