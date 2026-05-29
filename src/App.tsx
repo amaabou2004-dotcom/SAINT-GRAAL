@@ -147,6 +147,12 @@ export default function App() {
 
   const [selectedBook, setSelectedBook] = useState<BookItem | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<Author | null>(null);
+  const [checkoutBook, setCheckoutBook] = useState<BookItem | null>(null);
+  const [checkoutForm, setCheckoutForm] = useState({
+    lastName: '',
+    firstName: '',
+    deliveryAddress: ''
+  });
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot'>('login');
@@ -180,6 +186,34 @@ export default function App() {
   }, []);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  const handleCheckoutSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!checkoutBook) return;
+
+    const nom = checkoutForm.lastName.trim();
+    const prenom = checkoutForm.firstName.trim();
+    const adresse = checkoutForm.deliveryAddress.trim();
+
+    // Construct WhatsApp message elegantly
+    let message = `Bonjour, je souhaite commander le livre : *${checkoutBook.title}*\n\n`;
+    message += `📋 *Détails de la commande :*\n`;
+    if (prenom || nom) {
+      message += `• *Nom & Prénom :* ${prenom} ${nom}\n`;
+    }
+    if (adresse) {
+      message += `• *Adresse de livraison :* ${adresse}\n`;
+    } else {
+      message += `• *Adresse de livraison :* Non spécifiée / Retrait\n`;
+    }
+
+    const whatsappUrl = `https://wa.me/${config.whatsapp.replace(/\s+/g, '')}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+
+    // Close checkout modal & reset form
+    setCheckoutBook(null);
+    setCheckoutForm({ lastName: '', firstName: '', deliveryAddress: '' });
+  };
 
   // --- SEO Optimization ---
   const currentTitle = useMemo(() => {
@@ -1940,9 +1974,9 @@ export default function App() {
                             </div>
                             <div className="flex items-center gap-2">
                               <button 
-                                onClick={() => window.open(`https://wa.me/${config.whatsapp.replace(/\s+/g, '')}?text=Bonjour, je souhaite commander le livre : ${book.title}`, '_blank')}
+                                onClick={() => setCheckoutBook(book)}
                                 className="flex-1 bg-violet text-white py-3 rounded-xl font-bold hover:bg-violet/90 transition-all shadow-md active:scale-95 text-sm"
-                                aria-label={`Commander ${book.title} via WhatsApp`}
+                                aria-label={`Commander ${book.title}`}
                               >
                                 Commander
                               </button>
@@ -3269,7 +3303,7 @@ export default function App() {
                   <div className="flex items-center justify-between">
                     <span className="text-3xl font-black text-violet">{selectedBook.price} CFA</span>
                     <button 
-                      onClick={() => window.open(`https://wa.me/${config.whatsapp.replace(/\s+/g, '')}?text=Bonjour, je souhaite commander le livre : ${selectedBook.title}`, '_blank')}
+                      onClick={() => setCheckoutBook(selectedBook)}
                       className="bg-vert text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-vert/20 hover:scale-105 transition-transform"
                     >
                       Commander sur WhatsApp
@@ -3283,6 +3317,88 @@ export default function App() {
                   </button>
                 </div>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {checkoutBook && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4 overflow-y-auto"
+            onClick={() => {
+              setCheckoutBook(null);
+              setCheckoutForm({ lastName: '', firstName: '', deliveryAddress: '' });
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-checkout-title"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-white rounded-[2rem] overflow-hidden w-full max-w-md shadow-2xl p-8 my-auto relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => {
+                  setCheckoutBook(null);
+                  setCheckoutForm({ lastName: '', firstName: '', deliveryAddress: '' });
+                }} 
+                className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                aria-label="Fermer le formulaire de commande"
+              >
+                <X aria-hidden="true" className="w-5 h-5 text-gray-400" />
+              </button>
+
+              <h2 id="modal-checkout-title" className="text-2xl font-black text-violet mb-2">Finaliser la commande</h2>
+              <p className="text-gray-500 text-sm mb-6">
+                Pour commander <strong className="text-violet">"{checkoutBook.title}"</strong> ({checkoutBook.price.toLocaleString()} CFA), veuillez renseigner vos coordonnées. Vous serez mis(e) en relation directe via WhatsApp pour valider la livraison.
+              </p>
+
+              <form onSubmit={handleCheckoutSubmit} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Prénom</label>
+                  <input
+                    type="text"
+                    value={checkoutForm.firstName}
+                    onChange={(e) => setCheckoutForm({ ...checkoutForm, firstName: e.target.value })}
+                    placeholder="Ex: Kouame"
+                    className="w-full p-4 rounded-xl border border-gray-100 bg-gray-50 outline-none text-sm focus:border-violet focus:bg-white transition-all font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Nom de famille</label>
+                  <input
+                    type="text"
+                    value={checkoutForm.lastName}
+                    onChange={(e) => setCheckoutForm({ ...checkoutForm, lastName: e.target.value })}
+                    placeholder="Ex: Yao"
+                    className="w-full p-4 rounded-xl border border-gray-100 bg-gray-50 outline-none text-sm focus:border-violet focus:bg-white transition-all font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Adresse de livraison <span className="text-gray-400 text-[9px] font-normal lowercase">(si besoin)</span></label>
+                  <textarea
+                    rows={3}
+                    value={checkoutForm.deliveryAddress}
+                    onChange={(e) => setCheckoutForm({ ...checkoutForm, deliveryAddress: e.target.value })}
+                    placeholder="Ex: Abidjan, Cocody Riviera 3, Cité des arts (laissez vide si retrait en librairie)"
+                    className="w-full p-4 rounded-xl border border-gray-100 bg-gray-50 outline-none text-sm focus:border-violet focus:bg-white transition-all font-medium resize-none shadow-sm"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full bg-[#25D366] hover:bg-[#20ba59] text-white py-4 rounded-xl font-bold transition-all shadow-md active:scale-95 text-sm flex items-center justify-center gap-2 mt-4 hover:shadow-lg hover:shadow-green-200"
+                >
+                  <span>Confirmer &amp; Envoyer sur WhatsApp</span>
+                </button>
+              </form>
             </motion.div>
           </motion.div>
         )}
