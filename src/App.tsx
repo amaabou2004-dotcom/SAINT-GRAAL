@@ -71,6 +71,7 @@ const INITIAL_CONFIG: SiteConfig = {
   slogan: "Saint Graal Ivoirien, l'idéal de l'édition",
   intro: "Une maison d'édition engagée pour la promotion de la culture et des talents littéraires en Côte d'Ivoire et au-delà.",
   whatsapp: "+225 07 47 83 53 28",
+  whatsapp2: "+225 07 03 63 10 55",
   dirName: "M. Pierre Fauste",
   dirRole: "Directeur Général, écrivain engagé",
   dirBio: "Passionné par les lettres et le développement culturel, M. Pierre Fauste dirige Saint Graal Ivoirien avec une vision d'excellence et d'ouverture sur le monde.",
@@ -141,6 +142,8 @@ export default function App() {
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [isAuthProcessing, setIsAuthProcessing] = useState(false);
   const [adminTab, setAdminTab] = useState<string>('dashboard');
+  const [agendaFilter, setAgendaFilter] = useState<'all' | 'upcoming' | 'past'>('all');
+  const [showAllAuthors, setShowAllAuthors] = useState(false);
   const [autoOpenAddBook, setAutoOpenAddBook] = useState(false);
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -2303,8 +2306,8 @@ export default function App() {
             <div className="w-20 h-1.5 bg-vert mx-auto rounded-full" />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8" role="list">
-            {visibleAuthors.map((author) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-4" role="list">
+            {(showAllAuthors ? visibleAuthors : visibleAuthors.slice(0, 5)).map((author) => (
               <motion.div 
                 key={author.id}
                 initial={{ opacity: 0, scale: 0.9 }}
@@ -2341,6 +2344,18 @@ export default function App() {
               </motion.div>
             ))}
           </div>
+
+          {visibleAuthors.length > 5 && (
+            <div className="flex justify-center mt-12">
+              <button
+                type="button"
+                onClick={() => setShowAllAuthors(!showAllAuthors)}
+                className="px-8 py-4 border-2 border-violet hover:bg-violet hover:text-white text-violet font-black uppercase tracking-widest text-[11px] rounded-2xl transition-all hover:scale-102 active:scale-98 cursor-pointer shadow-lg shadow-violet/5 outline-none focus:ring-2 focus:ring-violet"
+              >
+                {showAllAuthors ? "Voir moins" : "Voir plus d'auteurs"}
+              </button>
+            </div>
+          )}
 
           {visibleAuthors.length === 0 && (
             <p className="text-center text-gray-400 py-12">Nos auteurs seront bientôt affichés ici.</p>
@@ -2835,21 +2850,87 @@ export default function App() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             {/* Upcoming events lists (Left) */}
             <div className="lg:col-span-8 space-y-6">
-              {agendaEvents.filter(e => new Date(e.date) >= new Date(new Date().setHours(0,0,0,0))).length === 0 ? (
-                <div className="p-12 text-center rounded-[2.5rem] bg-gray-50 border border-gray-100 flex flex-col items-center justify-center space-y-4">
-                  <div className="w-12 h-12 bg-violet/10 text-violet rounded-full flex items-center justify-center">
-                    <Book className="w-6 h-6 text-emerald-400" />
-                  </div>
-                  <div>
-                    <h4 className="font-extrabold text-gray-700">Aucun événement à venir</h4>
-                    <p className="text-xs text-gray-500 mt-1 font-semibold">Notre équipe prépare de merveilleuses rencontres littéraires pour bientôt !</p>
-                  </div>
-                </div>
-              ) : (
-                agendaEvents
-                  .filter(e => new Date(e.date) >= new Date(new Date().setHours(0,0,0,0)))
-                  .sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-                  .slice(0, 5)
+              {/* Filter Tabs */}
+              <div className="flex flex-wrap gap-2 p-1 bg-gray-100 rounded-2xl w-fit mb-2">
+                <button
+                  id="tab-agenda-all"
+                  type="button"
+                  onClick={() => setAgendaFilter('all')}
+                  className={`py-2.5 px-5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                    agendaFilter === 'all' 
+                      ? 'bg-violet text-white shadow-md shadow-violet/15' 
+                      : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'
+                  }`}
+                >
+                  Tous ({agendaEvents.length})
+                </button>
+                <button
+                  id="tab-agenda-upcoming"
+                  type="button"
+                  onClick={() => setAgendaFilter('upcoming')}
+                  className={`py-2.5 px-5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                    agendaFilter === 'upcoming' 
+                      ? 'bg-violet text-white shadow-md shadow-violet/15' 
+                      : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'
+                  }`}
+                >
+                  À venir ({agendaEvents.filter(e => e.date >= new Date().toISOString().split('T')[0]).length})
+                </button>
+                <button
+                  id="tab-agenda-past"
+                  type="button"
+                  onClick={() => setAgendaFilter('past')}
+                  className={`py-2.5 px-5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                    agendaFilter === 'past' 
+                      ? 'bg-violet text-white shadow-md shadow-violet/15' 
+                      : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'
+                  }`}
+                >
+                  Passés ({agendaEvents.filter(e => e.date < new Date().toISOString().split('T')[0]).length})
+                </button>
+              </div>
+
+              {(() => {
+                const todayDateStr = new Date().toISOString().split('T')[0];
+                const filteredEvents = agendaEvents.filter(evt => {
+                  if (agendaFilter === 'upcoming') {
+                    return evt.date >= todayDateStr;
+                  }
+                  if (agendaFilter === 'past') {
+                    return evt.date < todayDateStr;
+                  }
+                  return true;
+                });
+
+                const sortedEvents = [...filteredEvents].sort((a, b) => {
+                  if (agendaFilter === 'past') {
+                    return new Date(b.date).getTime() - new Date(a.date).getTime();
+                  }
+                  return new Date(a.date).getTime() - new Date(b.date).getTime();
+                });
+
+                if (sortedEvents.length === 0) {
+                  return (
+                    <div className="p-12 text-center rounded-[2.5rem] bg-gray-50 border border-gray-100 flex flex-col items-center justify-center space-y-4">
+                      <div className="w-12 h-12 bg-violet/10 text-violet rounded-full flex items-center justify-center">
+                        <Book className="w-6 h-6 text-emerald-400" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-gray-700">
+                          {agendaFilter === 'past' ? "Aucun événement passé" : "Aucun événement à venir"}
+                        </h4>
+                        <p className="text-xs text-gray-500 mt-1 font-semibold">
+                          {agendaFilter === 'past' 
+                            ? "L'historique des événements s'affichera ici au fur et à mesure." 
+                            : "Notre équipe prépare de merveilleuses rencontres littéraires pour bientôt !"}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return sortedEvents
+                  .slice(0, 10)
                   .map((evt, i) => {
                     const evtLabels = {
                       signing: "Séance de Dédicace",
@@ -2871,6 +2952,8 @@ export default function App() {
                     const month = eventDate.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', '');
                     const weekday = eventDate.toLocaleDateString('fr-FR', { weekday: 'long' });
 
+                    const isPast = evt.date < todayDateStr;
+
                     return (
                       <motion.div
                         key={evt.id}
@@ -2878,12 +2961,12 @@ export default function App() {
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
                         transition={{ delay: i * 0.1 }}
-                        className="p-6 md:p-8 rounded-[2.5rem] bg-gray-50 border border-transparent hover:border-violet/15 hover:bg-violet/[0.01] transition-all flex flex-col md:flex-row gap-6 md:items-center justify-between group"
+                        className={`p-6 md:p-8 rounded-[2.5rem] bg-gray-50 border border-transparent hover:border-violet/15 hover:bg-violet/[0.01] transition-all flex flex-col md:flex-row gap-6 md:items-center justify-between group ${isPast ? 'opacity-75 hover:opacity-100' : ''}`}
                       >
                         <div className="flex items-center gap-4 md:gap-6 min-w-0">
                           <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
                             {/* Calendar Box */}
-                            <div className="w-16 h-16 md:w-20 md:h-20 bg-violet text-white rounded-[1.5rem] shadow-xl shadow-violet/15 flex flex-col items-center justify-center flex-shrink-0">
+                            <div className={`w-16 h-16 md:w-20 md:h-20 text-white rounded-[1.5rem] shadow-xl flex flex-col items-center justify-center flex-shrink-0 ${isPast ? 'bg-gray-400 shadow-gray-450/15' : 'bg-violet shadow-violet/15'}`}>
                               <span className="text-2xl md:text-3xl font-black leading-none">{day}</span>
                               <span className="text-[10px] font-black uppercase tracking-wider mt-0.5">{month}</span>
                             </div>
@@ -2900,9 +2983,16 @@ export default function App() {
                           </div>
 
                           <div className="min-w-0">
-                            <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border mb-2 ${evtColors[evt.type as keyof typeof evtColors] || "bg-gray-100 text-gray-500"}`}>
-                              {evtLabels[evt.type as keyof typeof evtLabels] || "Événement"}
-                            </span>
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${evtColors[evt.type as keyof typeof evtColors] || "bg-gray-100 text-gray-500"}`}>
+                                {evtLabels[evt.type as keyof typeof evtLabels] || "Événement"}
+                              </span>
+                              {isPast && (
+                                <span className="inline-block px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border border-gray-300 bg-gray-200 text-gray-600">
+                                  Terminé
+                                </span>
+                              )}
+                            </div>
                             <h4 className="text-lg md:text-xl font-extrabold text-gray-900 group-hover:text-violet transition-colors truncate">
                               {evt.title}
                             </h4>
@@ -2924,21 +3014,27 @@ export default function App() {
 
                         {/* Public Registration Action */}
                         <div className="flex-shrink-0 w-full md:w-auto">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedRegEvent(evt);
-                              setIsRegModalOpen(true);
-                            }}
-                            className="w-full md:w-auto px-5 py-3.5 bg-violet hover:bg-black text-white rounded-2xl text-[11px] font-black uppercase tracking-wider shadow-lg shadow-violet/15 hover:scale-102 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                          >
-                            <Calendar className="w-3.5 h-3.5" /> Je participe
-                          </button>
+                          {!isPast ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedRegEvent(evt);
+                                setIsRegModalOpen(true);
+                              }}
+                              className="w-full md:w-auto px-5 py-3.5 bg-violet hover:bg-black text-white rounded-2xl text-[11px] font-black uppercase tracking-wider shadow-lg shadow-violet/15 hover:scale-102 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                              <Calendar className="w-3.5 h-3.5" /> Je participe
+                            </button>
+                          ) : (
+                            <span className="text-[10px] uppercase font-black tracking-wider text-gray-400 block text-center px-4 py-2 border-2 border-gray-200/50 rounded-2xl bg-gray-50">
+                              Événement passé
+                            </span>
+                          )}
                         </div>
                       </motion.div>
                     );
-                  })
-              )}
+                  });
+              })()}
             </div>
 
             {/* Quick schedule details (Right) */}
@@ -3008,9 +3104,12 @@ export default function App() {
           <div>
             <h4 className="text-lg font-bold mb-8 uppercase tracking-widest text-vert">Contact</h4>
             <ul className="space-y-4 text-gray-400">
-              <li className="flex items-center gap-3">
-                <Phone className="w-5 h-5 text-violet" />
-                <span>{config.whatsapp}</span>
+              <li className="flex items-start gap-3">
+                <Phone className="w-5 h-5 text-violet mt-0.5" />
+                <div className="flex flex-col">
+                  <span>{config.whatsapp}</span>
+                  {config.whatsapp2 && <span>{config.whatsapp2}</span>}
+                </div>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-violet" />

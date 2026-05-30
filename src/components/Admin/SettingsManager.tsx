@@ -558,7 +558,7 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
 
           {activePanel === 'contact' && (
             <div className="space-y-10 animate-in fade-in slide-in-from-left-4 duration-300">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="space-y-4">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block ml-2">Email de Contact</label>
                   <input 
@@ -570,13 +570,26 @@ export const SettingsManager: React.FC<SettingsManagerProps> = ({
                   />
                 </div>
                 <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block ml-2">Numéro WhatsApp</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block ml-2">Numéro WhatsApp 1</label>
                   <div className="relative">
                     <WhatsAppIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-vert" />
                     <input 
                       name="whatsapp" 
                       value={formData.whatsapp} 
                       onChange={handleChange}
+                      className={`w-full pl-11 pr-4 py-4 rounded-2xl border-2 outline-none transition-all ${darkMode ? 'bg-gray-900 border-gray-700 focus:border-violet' : 'bg-gray-50 border-gray-50 focus:border-violet'}`}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block ml-2">Numéro WhatsApp 2</label>
+                  <div className="relative">
+                    <WhatsAppIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-vert" />
+                    <input 
+                      name="whatsapp2" 
+                      value={formData.whatsapp2 || ""} 
+                      onChange={handleChange}
+                      placeholder="+225 00 00 00 00 00"
                       className={`w-full pl-11 pr-4 py-4 rounded-2xl border-2 outline-none transition-all ${darkMode ? 'bg-gray-900 border-gray-700 focus:border-violet' : 'bg-gray-50 border-gray-50 focus:border-violet'}`}
                     />
                   </div>

@@ -155,6 +155,7 @@ export interface SiteConfig {
   slogan: string;
   intro: string;
   whatsapp: string;
+  whatsapp2?: string;
   dirName: string;
   dirRole: string;
   dirBio: string;
