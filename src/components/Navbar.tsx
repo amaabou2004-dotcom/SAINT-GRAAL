@@ -47,13 +47,13 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="bg-white p-1.5 rounded-xl shadow-sm border border-gray-50">
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="bg-white p-1 md:p-1.5 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center transition-all hover:scale-105 hover:shadow-md hover:border-violet/15 duration-300">
             {config.logo && (
               <img 
                 src={config.logo} 
                 alt={`Logo ${config.name}`} 
-                className="h-12 w-auto" 
+                className="h-11 md:h-14 lg:h-15 w-auto object-contain" 
                 referrerPolicy="no-referrer"
                 loading="eager"
                 decoding="async"
@@ -61,7 +61,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </div>
           <div className="hidden sm:block">
-            <h1 className="font-black text-xl text-violet tracking-tight leading-none">{config.name}</h1>
+            <h1 className="font-black text-xl text-violet tracking-tight leading-none">{config.name.toLowerCase()}</h1>
             <p className="text-[10px] font-bold text-vert uppercase tracking-widest mt-1">{config.slogan}</p>
           </div>
         </div>
