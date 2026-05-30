@@ -79,7 +79,7 @@ const BOOK_GENRES = [
 
 const INITIAL_CONFIG: SiteConfig = {
   name: "Saint Graal Ivoirien",
-  slogan: "Saint Graal Ivoirien, l'idéal de l'édition",
+  slogan: "l'idéal de l'édition !",
   intro: "Une maison d'édition engagée pour la promotion de la culture et des talents littéraires en Côte d'Ivoire et au-delà.",
   whatsapp: "+225 07 47 83 53 28",
   whatsapp2: "+225 07 03 63 10 55",
@@ -464,6 +464,10 @@ export default function App() {
         const data = snap.data() as SiteConfig;
         if (!data.whatsapp2) {
           data.whatsapp2 = INITIAL_CONFIG.whatsapp2;
+        }
+        if (data.slogan === "Saint Graal Ivoirien, l'idéal de l'édition" || data.slogan === "L'idéal de l'édition !") {
+          data.slogan = "l'idéal de l'édition !";
+          updateDoc(doc(db, 'config', 'main'), { slogan: "l'idéal de l'édition !" }).catch(console.error);
         }
         setConfig(data);
       }
@@ -1825,9 +1829,9 @@ export default function App() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="text-xl md:text-2xl font-medium text-vert mb-8"
+          className="text-xl md:text-2xl font-medium text-vert mb-8 lowercase"
         >
-          {config.slogan}
+          {config.slogan.toLowerCase()}
         </motion.p>
 
         <motion.p 

@@ -62,7 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
           <div className="hidden sm:block">
             <h1 className="font-black text-xl text-violet tracking-tight leading-none">{config.name.toLowerCase()}</h1>
-            <p className="text-[10px] font-bold text-vert uppercase tracking-widest mt-1">{config.slogan}</p>
+            <p className="text-[10px] font-bold text-vert tracking-widest mt-1 lowercase">{config.slogan.toLowerCase()}</p>
           </div>
         </div>
 
