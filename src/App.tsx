@@ -12,6 +12,17 @@ import {
   Facebook, Instagram, MessageCircle, Store as StoreIcon,
   BarChart3, PieChart, Activity, UserPlus, FileText, CheckCircle, AlertCircle, Clock, Moon, Sun, MoreVertical, ExternalLink, Calendar
 } from 'lucide-react';
+
+const TiktokIcon = ({ className = "w-5 h-5", ...props }: React.SVGProps<SVGSVGElement>) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    fill="currentColor" 
+    className={className} 
+    {...props}
+  >
+    <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.02 1.59 4.23.94.97 2.27 1.52 3.63 1.58v4.04c-1.88-.06-3.65-.95-4.83-2.4-.04 1.86-.02 3.72-.03 5.58 0 2.44-.78 4.9-2.73 6.13-2.58 1.9-6.37 1.42-8.33-1.01-1.96-2.24-1.8-6.1.35-8.15 1.62-1.64 4.13-2.13 6.25-1.42V13.3c-1.33-.24-2.7-.02-3.83.69-1.30.79-1.93 2.43-1.54 3.9.40 1.6 2.05 2.68 3.73 2.48 1.65-.21 2.97-1.6 2.97-3.23.01-4.01-.01-8.02.02-12.03-.02-.5-.01-1.01-.01-1.52l.02.01C12.52.01 12.525.02 12.525.02z" />
+  </svg>
+);
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area 
 } from 'recharts';
@@ -3139,6 +3150,9 @@ export default function App() {
               </a>
               <a href={`https://wa.me/${config.whatsapp.replace(/\s+/g, '')}`} target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center hover:bg-[#25D366] transition-colors focus:ring-2 focus:ring-[#25D366] outline-none" aria-label="Nous contacter sur WhatsApp">
                 <MessageCircle className="w-6 h-6" aria-hidden="true" />
+              </a>
+              <a href="https://www.tiktok.com/@st.graal.ivoirien?_r=1&_t=ZS-96naL8OpEdr" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-gray-800 rounded-full flex items-center justify-center hover:bg-black hover:text-[#00f2fe] border border-transparent hover:border-[#fe0979]/50 transition-all focus:ring-2 focus:ring-[#fe0979] outline-none group" aria-label="Suivre sur TikTok">
+                <TiktokIcon className="w-5 h-5 transition-transform group-hover:scale-110" aria-hidden="true" />
               </a>
             </div>
           </div>
