@@ -449,7 +449,13 @@ export default function App() {
   useEffect(() => {
     // 1. Monitor Connection Status & Public Config
     const unsubConfig = onSnapshot(doc(db, 'config', 'main'), { includeMetadataChanges: true }, (snap) => {
-      if (snap.exists()) setConfig(snap.data() as SiteConfig);
+      if (snap.exists()) {
+        const data = snap.data() as SiteConfig;
+        if (!data.whatsapp2) {
+          data.whatsapp2 = INITIAL_CONFIG.whatsapp2;
+        }
+        setConfig(data);
+      }
       if (!snap.metadata.fromCache) {
         setDbStatus('connected');
       }
