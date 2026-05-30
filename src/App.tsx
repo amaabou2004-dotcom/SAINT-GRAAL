@@ -1791,7 +1791,7 @@ export default function App() {
           whileInView={{ opacity: 1, y: 0 }}
           className="text-4xl md:text-6xl font-black text-violet mb-4 max-w-4xl"
         >
-          Maison d'Édition {config.name} | Excellence Littéraire
+          Maison d'Édition Saint Graal Ivoirien
         </motion.h1>
 
         {/* Hidden SEO Text for crawlers */}
