@@ -3174,14 +3174,6 @@ export default function App() {
               &copy; {new Date().getFullYear()} {config.name}. Tous droits réservés.
             </p>
           </div>
-          
-          <button 
-            onClick={() => setShowAdminLogin(true)}
-            className="text-gray-300 hover:text-violet transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-widest"
-          >
-            <Lock className="w-3 h-3" />
-            Administration
-          </button>
         </div>
       </footer>
 
