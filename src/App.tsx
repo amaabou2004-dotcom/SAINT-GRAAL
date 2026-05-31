@@ -325,7 +325,10 @@ export default function App() {
       "name": config.name,
       "slogan": config.slogan,
       "url": window.location.origin,
-      "logo": config.logo,
+      "logo": config.logo ? {
+        "@type": "ImageObject",
+        "url": config.logo
+      } : `${window.location.origin}/favicon.png`,
       "image": config.logo || 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=1200',
       "description": config.intro,
       "email": config.email,
@@ -1736,6 +1739,16 @@ export default function App() {
           <meta name="description" content={currentDesc} />
           <meta name="keywords" content={keywordsString} />
           
+          {/* Favicon & Logo dynamic overrides for Search Engines Favicon Extraction */}
+          {config.logo && (
+            <>
+              <link rel="icon" type="image/png" href={config.logo} />
+              <link rel="icon" type="image/svg+xml" href={config.logo} />
+              <link rel="apple-touch-icon" href={config.logo} />
+              <link rel="image_src" href={config.logo} />
+            </>
+          )}
+
           {/* Open Graph / Facebook */}
           <meta property="og:type" content="website" />
           <meta property="og:title" content={currentTitle} />
